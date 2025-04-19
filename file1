@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>טיימר אינטרוולים</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      direction: rtl;
+      padding: 20px;
+    }
+    input {
+      margin: 5px;
+      padding: 5px;
+    }
+    #timer {
+      font-size: 48px;
+      margin: 20px 0;
+    }
+    #status {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>טיימר אינטרוולים</h1>
+
+  <label>שניות עבודה: <input type="number" id="workTime" value="30"></label><br>
+  <label>שניות מנוחה: <input type="number" id="restTime" value="15"></label><br>
+  <label>מספר סבבים: <input type="number" id="rounds" value="5"></label><br>
+  <label>התכוננות אקראית (שניות): מ-<input type="number" id="prepMin" value="10" style="width:60px"> עד <input type="number" id="prepMax" value="50" style="width:60px"></label><br>
+  <label><input type="checkbox" id="hidePrepTimer"> הסתר זמן התכוננות</label><br>
+  <button onclick="startTimer()">התחל אימון</button>
+  <button onclick="skipInterval()">דלג לחלק הבא</button>
+
+  <div id="status"></div>
+  <div id="timer"></div>
+
+  <audio id="prepEndSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3"></audio>
+
+  <script>
+    let interval;
+    let work, rest, totalRounds, prepMin, prepMax;
+    let currentRound, isWorking, timeLeft;
+    let isInPrep = false;
+    let hidePrep = false;
+
+    function startTimer() {
+      work = parseInt(document.getElementById('workTime').value);
+      rest = parseInt(document.getElementById('restTime').value);
+      totalRounds = parseInt(document.getElementById('rounds').value);
+      prepMin = parseInt(document.getElementById('prepMin').value);
+      prepMax = parseInt(document.getElementById('prepMax').value);
+      hidePrep = document.getElementById('hidePrepTimer').checked;
+
+      currentRound = 1;
+      isWorking = true;
+      isInPrep = true;
+      timeLeft = getRandomPrepTime();
+
+      updateStatus();
+      clearInterval(interval);
+      interval = setInterval(runTimer, 1000);
+    }
+
+    function runTimer() {
+      timeLeft--;
+      if (!isInPrep || !hidePrep) {
+        document.getElementById('timer').innerText = timeLeft;
+      } else {
+        document.getElementById('timer').innerText = '';
+      }
+
+      if (timeLeft <= 0) {
+        if (isInPrep) {
+          document.getElementById('prepEndSound').play();
+          isInPrep = false;
+          timeLeft = work;
+          updateStatus();
+        } else {
+          nextInterval();
+        }
+      }
+    }
+
+    function skipInterval() {
+      if (isInPrep) {
+        isInPrep = false;
+        timeLeft = work;
+        updateStatus();
+      } else {
+        nextInterval();
+      }
+    }
+
+    function nextInterval() {
+      if (isWorking) {
+        isWorking = false;
+        timeLeft = rest;
+        updateStatus();
+      } else {
+        currentRound++;
+        if (currentRound > totalRounds) {
+          clearInterval(interval);
+          document.getElementById('status').innerText = 'סיימת! כל הכבוד 🎉';
+          document.getElementById('timer').innerText = '';
+          return;
+        }
+        isWorking = true;
+        isInPrep = true;
+        timeLeft = getRandomPrepTime();
+        updateStatus();
+      }
+    }
+
+    function updateStatus() {
+      if (isInPrep) {
+        document.getElementById('status').innerText = `סבב ${currentRound} - התכונן...`;
+        document.getElementById('timer').innerText = hidePrep ? '' : timeLeft;
+      } else {
+        document.getElementById('status').innerText = `סבב ${currentRound} - ${isWorking ? 'עבודה!' : 'מנוחה'}`;
+        document.getElementById('timer').innerText = timeLeft;
+      }
+    }
+
+    function getRandomPrepTime() {
+      return Math.floor(Math.random() * (prepMax - prepMin + 1)) + prepMin;
+    }
+  </script>
+</body>
+</html>
